@@ -1,0 +1,9 @@
+Here's the lineup for Friday ({date}):
+
+{course_info}
+
+{groups}
+
+See you on the course!
+
+-- Friday Golf Bot

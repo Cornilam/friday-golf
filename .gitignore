@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+venv/
+.env
+token.json
+credentials.json
+friday_golf.db
+.claude/

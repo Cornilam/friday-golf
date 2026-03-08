@@ -1,0 +1,9 @@
+Hey {name},
+
+Tee times are lining up for this Friday ({date}).
+
+Reply IN to play or OUT to skip.
+
+Registration closes Thursday at noon. Pairings + tee time details will follow.
+
+-- Friday Golf Bot
