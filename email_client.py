@@ -93,38 +93,75 @@ def send_pairings(
     return send_email(member.email, subject, body, "pairings")
 
 
+def _clean_reply_text(body: str) -> str:
+    """Extract the reply text before any quoted content."""
+    lines = []
+    for line in body.strip().splitlines():
+        if line.startswith(">") or (line.startswith("On ") and "wrote:" in line):
+            break
+        lines.append(line)
+    text = " ".join(lines).lower().strip()
+    text = re.sub(r"<[^>]+>", "", text)  # strip HTML tags
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
 def parse_reply_status(body: str) -> Optional[str]:
     """Parse an email reply body to determine RSVP status.
 
     Returns 'in', 'out', or None if unclear.
     """
-    # Clean up: take first few lines, lowercase, strip quoted text
-    lines = []
-    for line in body.strip().splitlines():
-        # Stop at quoted reply markers
-        if line.startswith(">") or line.startswith("On ") and "wrote:" in line:
-            break
-        lines.append(line)
-
-    text = " ".join(lines).lower().strip()
-    # Remove common email artifacts
-    text = re.sub(r"<[^>]+>", "", text)  # strip HTML tags
-    text = re.sub(r"\s+", " ", text).strip()
-
+    text = _clean_reply_text(body)
     if not text:
         return None
 
-    # Check for "in" keywords
     for keyword in config.KEYWORDS_IN:
         if keyword in text:
             return "in"
 
-    # Check for "out" keywords
     for keyword in config.KEYWORDS_OUT:
         if keyword in text:
             return "out"
 
     return None
+
+
+def parse_reply_preferences(body: str) -> dict:
+    """Parse course and time preferences from a reply.
+
+    Handles replies like:
+      "IN - Brown Deer, 8am"
+      "in. currie 9:30am"
+      "I'm in, prefer Dretzka morning"
+
+    Returns {'course': str, 'time': str} (empty strings if not found).
+    """
+    text = _clean_reply_text(body)
+    if not text:
+        return {"course": "", "time": ""}
+
+    # Match course names from config
+    matched_course = ""
+    for course_name in config.COURSES:
+        if course_name.lower() in text:
+            matched_course = course_name
+            break
+
+    # Match time patterns: "8am", "9:30am", "10:00 am", "morning", "afternoon"
+    matched_time = ""
+    time_match = re.search(r"\d{1,2}(?::\d{2})?\s*(?:am|pm)", text)
+    if time_match:
+        matched_time = time_match.group().strip()
+    elif "morning" in text:
+        matched_time = "morning"
+    elif "afternoon" in text:
+        matched_time = "afternoon"
+    elif "early" in text:
+        matched_time = "early"
+    elif "late" in text:
+        matched_time = "late"
+
+    return {"course": matched_course, "time": matched_time}
 
 
 def check_replies() -> list[dict]:
@@ -174,10 +211,19 @@ def check_replies() -> list[dict]:
                 continue
 
             status = parse_reply_status(body)
+            prefs = parse_reply_preferences(body) if status == "in" else {"course": "", "time": ""}
 
             if status:
-                parsed_replies.append({"email": sender_email, "status": status})
-                logger.info(f"Parsed reply from {sender_email}: {status}")
+                parsed_replies.append({
+                    "email": sender_email,
+                    "status": status,
+                    "preferred_course": prefs["course"],
+                    "preferred_time": prefs["time"],
+                })
+                logger.info(
+                    f"Parsed reply from {sender_email}: {status}"
+                    + (f" (course={prefs['course']}, time={prefs['time']})" if prefs["course"] or prefs["time"] else "")
+                )
             else:
                 logger.warning(f"Unclear reply from {sender_email}: {body[:100]}")
                 # Send clarification

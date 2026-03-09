@@ -127,9 +127,16 @@ def job_check_replies() -> None:
     for reply in replies:
         member = db.get_member_by_email(reply["email"])
         if member:
-            db.upsert_registration(member.id, week.id, reply["status"])
+            db.upsert_registration(
+                member.id, week.id, reply["status"],
+                preferred_course=reply.get("preferred_course", ""),
+                preferred_time=reply.get("preferred_time", ""),
+            )
+            prefs_str = ""
+            if reply.get("preferred_course") or reply.get("preferred_time"):
+                prefs_str = f" (prefers: {reply.get('preferred_course', '')} {reply.get('preferred_time', '')})"
             logger.info(
-                f"Registered {member.name} as '{reply['status']}' for week {week.week_of}"
+                f"Registered {member.name} as '{reply['status']}' for week {week.week_of}{prefs_str}"
             )
         else:
             logger.warning(f"Reply from unknown email: {reply['email']}")

@@ -71,6 +71,7 @@
     .no-week { text-align: center; padding: 3rem; }
     .no-week h2 { font-size: 1.5rem; margin-bottom: 1rem; color: #555; }
     .empty { color: #999; font-style: italic; font-size: 0.9rem; padding: 0.5rem 0; }
+    .pref { font-size: 0.8rem; color: #2d5a27; margin-top: 0.15rem; }
   </style>
 </head>
 <body>
@@ -134,7 +135,14 @@
         {% if in_members %}
         <ul class="member-list">
           {% for m in in_members %}
-          <li>{{ m.name }} <span class="badge in">IN</span></li>
+          <li>
+            <div>
+              {{ m.name }} <span class="badge in">IN</span>
+              {% if m.preferred_course or m.preferred_time %}
+              <div class="pref">Prefers: {{ m.preferred_course }}{% if m.preferred_course and m.preferred_time %}, {% endif %}{{ m.preferred_time }}</div>
+              {% endif %}
+            </div>
+          </li>
           {% endfor %}
         </ul>
         {% endif %}

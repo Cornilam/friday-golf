@@ -33,6 +33,8 @@ class Registration:
     member_id: int
     week_id: int
     status: str  # in, out
+    preferred_course: str
+    preferred_time: str
     registered_at: str
 
 
@@ -102,6 +104,8 @@ def init_db() -> None:
             member_id INTEGER NOT NULL REFERENCES members(id),
             week_id INTEGER NOT NULL REFERENCES weeks(id),
             status TEXT NOT NULL,
+            preferred_course TEXT NOT NULL DEFAULT '',
+            preferred_time TEXT NOT NULL DEFAULT '',
             registered_at TEXT NOT NULL DEFAULT (datetime('now')),
             UNIQUE(member_id, week_id)
         );
@@ -136,7 +140,21 @@ def init_db() -> None:
         );
     """)
     conn.commit()
+
+    # Migrations — add columns to existing tables if missing
+    _migrate(conn)
     conn.close()
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add new columns to existing tables (safe to run repeatedly)."""
+    # Add preference columns to registrations
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(registrations)").fetchall()}
+    if "preferred_course" not in cols:
+        conn.execute("ALTER TABLE registrations ADD COLUMN preferred_course TEXT NOT NULL DEFAULT ''")
+    if "preferred_time" not in cols:
+        conn.execute("ALTER TABLE registrations ADD COLUMN preferred_time TEXT NOT NULL DEFAULT ''")
+    conn.commit()
 
 
 # --- Member queries ---
@@ -220,14 +238,20 @@ def close_week(week_id: int) -> None:
 # --- Registration queries ---
 
 
-def upsert_registration(member_id: int, week_id: int, status: str) -> Registration:
+def upsert_registration(
+    member_id: int, week_id: int, status: str,
+    preferred_course: str = "", preferred_time: str = "",
+) -> Registration:
     conn = get_connection()
     conn.execute(
-        """INSERT INTO registrations (member_id, week_id, status)
-           VALUES (?, ?, ?)
+        """INSERT INTO registrations (member_id, week_id, status, preferred_course, preferred_time)
+           VALUES (?, ?, ?, ?, ?)
            ON CONFLICT(member_id, week_id)
-           DO UPDATE SET status = excluded.status, registered_at = datetime('now')""",
-        (member_id, week_id, status),
+           DO UPDATE SET status = excluded.status,
+               preferred_course = excluded.preferred_course,
+               preferred_time = excluded.preferred_time,
+               registered_at = datetime('now')""",
+        (member_id, week_id, status, preferred_course, preferred_time),
     )
     conn.commit()
     row = conn.execute(

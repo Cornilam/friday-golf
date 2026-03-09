@@ -4,6 +4,13 @@ Tee times are lining up for this Friday ({date}).
 
 Reply IN to play or OUT to skip.
 
+If you're in, let us know your preferences:
+  - Preferred course? (e.g. Brown Deer, Dretzka, Currie, Oakwood, etc.)
+  - Preferred time? (e.g. 8am, 9:30am, morning, afternoon)
+
+Example reply: "IN - Brown Deer, 8am"
+Or just reply "IN" and we'll slot you in wherever works.
+
 Registration closes Thursday at noon. Pairings + tee time details will follow.
 
 -- Friday Golf Bot

@@ -40,13 +40,18 @@ def _get_week_context():
     tee_times = db.get_tee_times(week.id)
     pairings = db.get_pairings(week.id)
 
-    # Resolve member names for registrations
+    # Resolve member names and preferences for registrations
     conn = db.get_connection()
     in_members = []
     for r in ins:
         row = conn.execute("SELECT name, email FROM members WHERE id = ?", (r.member_id,)).fetchone()
         if row:
-            in_members.append({"name": row["name"], "email": row["email"]})
+            in_members.append({
+                "name": row["name"],
+                "email": row["email"],
+                "preferred_course": r.preferred_course,
+                "preferred_time": r.preferred_time,
+            })
     out_members = []
     for r in outs:
         row = conn.execute("SELECT name, email FROM members WHERE id = ?", (r.member_id,)).fetchone()
