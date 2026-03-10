@@ -131,6 +131,14 @@ def init_db() -> None:
             tee_time_id INTEGER REFERENCES tee_times(id)
         );
 
+        CREATE TABLE IF NOT EXISTS season_schedule (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            week_number INTEGER NOT NULL,
+            play_date TEXT NOT NULL,
+            course_name TEXT NOT NULL,
+            UNIQUE(week_number)
+        );
+
         CREATE TABLE IF NOT EXISTS email_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             to_email TEXT NOT NULL,
@@ -409,6 +417,31 @@ def get_pairings(week_id: int) -> list[dict]:
         groups[gn]["players"].append({"name": row["name"], "email": row["email"]})
 
     return [groups[k] for k in sorted(groups)]
+
+
+# --- Season schedule ---
+
+
+def upsert_season_week(week_number: int, play_date: str, course_name: str) -> None:
+    conn = get_connection()
+    conn.execute(
+        """INSERT INTO season_schedule (week_number, play_date, course_name)
+           VALUES (?, ?, ?)
+           ON CONFLICT(week_number)
+           DO UPDATE SET play_date = excluded.play_date, course_name = excluded.course_name""",
+        (week_number, play_date, course_name),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_season_schedule() -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM season_schedule ORDER BY week_number"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 # --- Email log ---

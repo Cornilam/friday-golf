@@ -89,7 +89,22 @@ def _run_in_thread(fn, *args):
 def dashboard():
     ctx = _get_week_context()
     members = db.get_active_members()
-    return render_template("dashboard.html", **ctx, members=members, courses=config.COURSES)
+    season = db.get_season_schedule()
+
+    # Find this week and next week in the season
+    from datetime import date
+    today = date.today()
+    for s in season:
+        d = date.fromisoformat(s["play_date"])
+        s["play_date_fmt"] = d.strftime("%a, %b %d").replace(" 0", " ")
+    upcoming = [s for s in season if date.fromisoformat(s["play_date"]) >= today]
+    past = [s for s in season if date.fromisoformat(s["play_date"]) < today]
+
+    return render_template(
+        "dashboard.html", **ctx,
+        members=members, courses=config.COURSES,
+        season=season, upcoming=upcoming, past=past,
+    )
 
 
 @app.route("/action/send-invites", methods=["POST"])

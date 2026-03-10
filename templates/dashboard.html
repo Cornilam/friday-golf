@@ -7,24 +7,28 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a2e; line-height: 1.5; }
-    .header { background: #2d5a27; color: white; padding: 1.25rem 2rem; display: flex; align-items: center; justify-content: space-between; }
-    .header h1 { font-size: 1.5rem; font-weight: 700; }
-    .header .week-info { font-size: 0.95rem; opacity: 0.9; }
-    .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
 
-    /* Flash messages */
+    .header { background: linear-gradient(135deg, #2d5a27 0%, #1a3a18 100%); color: white; padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
+    .header h1 span { opacity: 0.7; font-weight: 400; }
+    .header .week-info { font-size: 0.95rem; opacity: 0.85; }
+
+    .nav { background: white; border-bottom: 1px solid #e0e0e0; padding: 0 2rem; display: flex; gap: 0; }
+    .nav a { padding: 0.75rem 1.25rem; font-size: 0.9rem; font-weight: 600; color: #666; text-decoration: none; border-bottom: 3px solid transparent; transition: all 0.15s; }
+    .nav a:hover { color: #2d5a27; }
+    .nav a.active { color: #2d5a27; border-bottom-color: #2d5a27; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
     .flash { padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; }
     .flash.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .flash.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
-    /* Cards */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
     @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
     .card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .card h2 { font-size: 1rem; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; border-bottom: 2px solid #f0f2f5; padding-bottom: 0.5rem; }
     .card.full { grid-column: 1 / -1; }
 
-    /* Stats */
     .stats { display: flex; gap: 1rem; margin-bottom: 1.25rem; }
     .stat { flex: 1; background: white; border-radius: 12px; padding: 1.25rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .stat .number { font-size: 2rem; font-weight: 700; }
@@ -33,27 +37,23 @@
     .stat.out .number { color: #c0392b; }
     .stat.pending .number { color: #f39c12; }
 
-    /* Lists */
     .member-list { list-style: none; }
-    .member-list li { padding: 0.4rem 0; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; }
+    .member-list li { padding: 0.5rem 0; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; }
     .member-list li + li { border-top: 1px solid #f0f2f5; }
     .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
     .badge.in { background: #d4edda; color: #155724; }
     .badge.out { background: #f8d7da; color: #721c24; }
     .badge.no-resp { background: #fff3cd; color: #856404; }
 
-    /* Tee times */
     .tee-time-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; }
     .tee-time-row + .tee-time-row { border-top: 1px solid #f0f2f5; }
     .tee-time-row .course { font-weight: 600; }
     .tee-time-row .time { color: #2d5a27; font-weight: 600; }
     .tee-time-row .meta { color: #777; font-size: 0.85rem; }
 
-    /* Pairings */
     .group-card { background: #f8f9fa; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; }
     .group-card .group-header { font-weight: 700; color: #2d5a27; margin-bottom: 0.25rem; }
 
-    /* Actions */
     .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.6rem 1rem; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.15s; }
     .btn:hover { opacity: 0.85; }
@@ -63,7 +63,6 @@
     .btn.danger { background: #c0392b; color: white; }
     .btn.sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
 
-    /* Forms */
     .inline-form { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .inline-form input { padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; }
     .inline-form input:focus { outline: none; border-color: #2d5a27; }
@@ -72,14 +71,42 @@
     .no-week h2 { font-size: 1.5rem; margin-bottom: 1rem; color: #555; }
     .empty { color: #999; font-style: italic; font-size: 0.9rem; padding: 0.5rem 0; }
     .pref { font-size: 0.8rem; color: #2d5a27; margin-top: 0.15rem; }
+
+    /* Roster cards */
+    .roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; }
+    .roster-card { background: #f8f9fa; border-radius: 10px; padding: 1rem; text-align: center; transition: transform 0.15s, box-shadow 0.15s; }
+    .roster-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .roster-card .avatar { width: 48px; height: 48px; border-radius: 50%; margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; color: white; }
+    .roster-card .name { font-weight: 600; font-size: 0.9rem; }
+    .roster-card .number { font-size: 0.75rem; color: #999; }
+
+    /* Season schedule */
+    .schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
+    .sched-card { background: #f8f9fa; border-radius: 8px; padding: 0.75rem 1rem; border-left: 4px solid #2d5a27; position: relative; }
+    .sched-card.past { opacity: 0.5; border-left-color: #ccc; }
+    .sched-card.next { border-left-color: #f39c12; background: #fffdf0; }
+    .sched-card .week-num { font-size: 0.7rem; color: #999; text-transform: uppercase; font-weight: 700; }
+    .sched-card .sched-course { font-weight: 700; font-size: 1rem; color: #1a1a2e; }
+    .sched-card .sched-date { font-size: 0.85rem; color: #555; }
+
+    .section-title { font-size: 1.1rem; font-weight: 700; color: #333; margin: 1.5rem 0 0.75rem; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>Friday Golf</h1>
+    <h1>Jacobs Golf <span>2026</span></h1>
     {% if week %}
     <span class="week-info">{{ friday_str }} &mdash; {{ week.status|upper }}</span>
     {% endif %}
+  </div>
+
+  <div class="nav">
+    <a href="#" class="active" onclick="showTab('dashboard')">Dashboard</a>
+    <a href="#" onclick="showTab('season')">Season Schedule</a>
+    <a href="#" onclick="showTab('roster')">The Roster</a>
+    <a href="#" onclick="showTab('admin')">Admin</a>
   </div>
 
   <div class="container">
@@ -89,145 +116,200 @@
     {% endfor %}
     {% endwith %}
 
-    {% if not week %}
-    <div class="card no-week">
-      <h2>No Active Week</h2>
-      <p>Send invites to start a new week.</p>
-      <br>
-      <form method="POST" action="/action/send-invites">
-        <button class="btn primary" type="submit">Send Invites for This Friday</button>
-      </form>
-    </div>
-    {% else %}
-
-    <!-- Stats -->
-    <div class="stats">
-      <div class="stat in">
-        <div class="number">{{ total_in }}</div>
-        <div class="label">Playing</div>
-      </div>
-      <div class="stat out">
-        <div class="number">{{ total_out }}</div>
-        <div class="label">Out</div>
-      </div>
-      <div class="stat pending">
-        <div class="number">{{ total_no_resp }}</div>
-        <div class="label">No Response</div>
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="card full" style="margin-bottom: 1.25rem;">
-      <h2>Actions</h2>
-      <div class="actions">
-        <form method="POST" action="/action/send-invites"><button class="btn primary" type="submit">Send Invites</button></form>
-        <form method="POST" action="/action/check-replies"><button class="btn primary" type="submit">Check Replies</button></form>
-        <form method="POST" action="/action/send-reminders"><button class="btn warning" type="submit">Send Reminders</button></form>
-        <form method="POST" action="/action/scrape-times"><button class="btn secondary" type="submit">Scrape Tee Times</button></form>
-        <form method="POST" action="/action/generate-pairings"><button class="btn danger" type="submit">Close &amp; Generate Pairings</button></form>
-      </div>
-    </div>
-
-    <div class="grid">
-      <!-- Players -->
-      <div class="card">
-        <h2>Players</h2>
-        {% if in_members %}
-        <ul class="member-list">
-          {% for m in in_members %}
-          <li>
-            <div>
-              {{ m.name }} <span class="badge in">IN</span>
-              {% if m.preferred_course or m.preferred_time %}
-              <div class="pref">Prefers: {{ m.preferred_course }}{% if m.preferred_course and m.preferred_time %}, {% endif %}{{ m.preferred_time }}</div>
-              {% endif %}
-            </div>
-          </li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-        {% if out_members %}
-        <ul class="member-list">
-          {% for m in out_members %}
-          <li>{{ m.name }} <span class="badge out">OUT</span></li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-        {% if non_resp %}
-        <ul class="member-list">
-          {% for m in non_resp %}
-          <li>{{ m.name }} <span class="badge no-resp">PENDING</span></li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-        {% if not in_members and not out_members and not non_resp %}
-        <p class="empty">No registrations yet.</p>
-        {% endif %}
-      </div>
-
-      <!-- Tee Times -->
-      <div class="card">
-        <h2>Tee Times</h2>
-        {% if tee_times %}
-        {% for tt in tee_times %}
-        <div class="tee-time-row">
-          <div>
-            <span class="course">{{ tt.course_name }}</span>
-            <span class="meta">&mdash; {{ tt.holes }}H, {{ tt.spots }} spots</span>
-          </div>
-          <span class="time">{{ tt.tee_time }}</span>
-        </div>
-        {% endfor %}
-        {% else %}
-        <p class="empty">No tee times yet. Scrape or add manually.</p>
-        {% endif %}
-
-        <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
-        <form method="POST" action="/action/add-tee-time" class="inline-form">
-          <input type="text" name="course" placeholder="Course name" required style="width: 140px;">
-          <input type="text" name="time" placeholder="YYYY-MM-DD HH:MM" required style="width: 160px;">
-          <input type="number" name="spots" value="4" min="1" max="8" style="width: 50px;">
-          <button class="btn sm secondary" type="submit">Add</button>
+    <!-- ==================== DASHBOARD TAB ==================== -->
+    <div id="tab-dashboard" class="tab-content active">
+      {% if not week %}
+      <div class="card no-week">
+        <h2>No Active Week</h2>
+        <p>Send invites to start a new week.</p>
+        <br>
+        <form method="POST" action="/action/send-invites">
+          <button class="btn primary" type="submit">Send Invites for This Friday</button>
         </form>
       </div>
+      {% else %}
 
-      <!-- Pairings -->
-      {% if pairings %}
-      <div class="card full">
-        <h2>Pairings</h2>
-        {% for g in pairings %}
-        <div class="group-card">
-          <div class="group-header">Group {{ g.group_number }} {% if g.tee_time %}&mdash; {{ g.tee_time }}{% endif %}</div>
-          <div>{{ g.players|map(attribute='name')|join(', ') }}</div>
+      <div class="stats">
+        <div class="stat in">
+          <div class="number">{{ total_in }}</div>
+          <div class="label">Playing</div>
         </div>
-        {% endfor %}
+        <div class="stat out">
+          <div class="number">{{ total_out }}</div>
+          <div class="label">Out</div>
+        </div>
+        <div class="stat pending">
+          <div class="number">{{ total_no_resp }}</div>
+          <div class="label">No Response</div>
+        </div>
+      </div>
+
+      <div class="card full" style="margin-bottom: 1.25rem;">
+        <h2>Actions</h2>
+        <div class="actions">
+          <form method="POST" action="/action/send-invites"><button class="btn primary" type="submit">Send Invites</button></form>
+          <form method="POST" action="/action/check-replies"><button class="btn primary" type="submit">Check Replies</button></form>
+          <form method="POST" action="/action/send-reminders"><button class="btn warning" type="submit">Send Reminders</button></form>
+          <form method="POST" action="/action/scrape-times"><button class="btn secondary" type="submit">Scrape Tee Times</button></form>
+          <form method="POST" action="/action/generate-pairings"><button class="btn danger" type="submit">Close &amp; Generate Pairings</button></form>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Players This Week</h2>
+          {% if in_members %}
+          <ul class="member-list">
+            {% for m in in_members %}
+            <li>
+              <div>
+                {{ m.name }} <span class="badge in">IN</span>
+                {% if m.preferred_course or m.preferred_time %}
+                <div class="pref">Prefers: {{ m.preferred_course }}{% if m.preferred_course and m.preferred_time %}, {% endif %}{{ m.preferred_time }}</div>
+                {% endif %}
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if out_members %}
+          <ul class="member-list">
+            {% for m in out_members %}
+            <li>{{ m.name }} <span class="badge out">OUT</span></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if non_resp %}
+          <ul class="member-list">
+            {% for m in non_resp %}
+            <li>{{ m.name }} <span class="badge no-resp">PENDING</span></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if not in_members and not out_members and not non_resp %}
+          <p class="empty">No registrations yet.</p>
+          {% endif %}
+        </div>
+
+        <div class="card">
+          <h2>Tee Times</h2>
+          {% if tee_times %}
+          {% for tt in tee_times %}
+          <div class="tee-time-row">
+            <div>
+              <span class="course">{{ tt.course_name }}</span>
+              <span class="meta">&mdash; {{ tt.holes }}H, {{ tt.spots }} spots</span>
+            </div>
+            <span class="time">{{ tt.tee_time }}</span>
+          </div>
+          {% endfor %}
+          {% else %}
+          <p class="empty">No tee times yet. Scrape or add manually.</p>
+          {% endif %}
+          <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
+          <form method="POST" action="/action/add-tee-time" class="inline-form">
+            <input type="text" name="course" placeholder="Course name" required style="width: 140px;">
+            <input type="text" name="time" placeholder="YYYY-MM-DD HH:MM" required style="width: 160px;">
+            <input type="number" name="spots" value="4" min="1" max="8" style="width: 50px;">
+            <button class="btn sm secondary" type="submit">Add</button>
+          </form>
+        </div>
+
+        {% if pairings %}
+        <div class="card full">
+          <h2>Pairings</h2>
+          {% for g in pairings %}
+          <div class="group-card">
+            <div class="group-header">Group {{ g.group_number }} {% if g.tee_time %}&mdash; {{ g.tee_time }}{% endif %}</div>
+            <div>{{ g.players|map(attribute='name')|join(', ') }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
       {% endif %}
     </div>
 
-    {% endif %}
-
-    <!-- Members Management -->
-    <div class="card full">
-      <h2>Members ({{ members|length }})</h2>
-      <ul class="member-list">
-        {% for m in members %}
-        <li>
-          <span>{{ m.name }} <span style="color:#999;">&lt;{{ m.email }}&gt;</span></span>
-          <form method="POST" action="/action/remove-member" style="display:inline;">
-            <input type="hidden" name="email" value="{{ m.email }}">
-            <button class="btn sm danger" type="submit" onclick="return confirm('Remove {{ m.name }}?')">Remove</button>
-          </form>
-        </li>
+    <!-- ==================== SEASON TAB ==================== -->
+    <div id="tab-season" class="tab-content">
+      {% if upcoming %}
+      <div class="section-title">Upcoming</div>
+      <div class="schedule-grid">
+        {% for s in upcoming %}
+        <div class="sched-card {% if loop.first %}next{% endif %}">
+          <div class="week-num">Week {{ s.week_number }}</div>
+          <div class="sched-course">{{ s.course_name }}</div>
+          <div class="sched-date">{{ s.play_date_fmt }}</div>
+        </div>
         {% endfor %}
-      </ul>
-      <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
-      <form method="POST" action="/action/add-member" class="inline-form">
-        <input type="text" name="name" placeholder="Full name" required>
-        <input type="email" name="email" placeholder="email@example.com" required>
-        <button class="btn sm primary" type="submit">Add Member</button>
-      </form>
+      </div>
+      {% endif %}
+
+      {% if past %}
+      <div class="section-title">Completed</div>
+      <div class="schedule-grid">
+        {% for s in past %}
+        <div class="sched-card past">
+          <div class="week-num">Week {{ s.week_number }}</div>
+          <div class="sched-course">{{ s.course_name }}</div>
+          <div class="sched-date">{{ s.play_date_fmt }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if not season %}
+      <div class="card"><p class="empty">No season schedule loaded. Run import_season.py to load it.</p></div>
+      {% endif %}
+    </div>
+
+    <!-- ==================== ROSTER TAB ==================== -->
+    <div id="tab-roster" class="tab-content">
+      <div class="section-title">The Squad ({{ members|length }} golfers)</div>
+      <div class="roster">
+        {% set colors = ['#2d5a27','#1a6b3c','#3d7a35','#4a8b3f','#2e7d32','#388e3c','#43a047','#4caf50','#66bb6a','#558b2f','#689f38','#7cb342'] %}
+        {% for m in members %}
+        <div class="roster-card">
+          <div class="avatar" style="background: {{ colors[loop.index0 % colors|length] }};">{{ m.name[0] }}</div>
+          <div class="name">{{ m.name }}</div>
+          <div class="number">#{{ loop.index }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ==================== ADMIN TAB ==================== -->
+    <div id="tab-admin" class="tab-content">
+      <div class="card full">
+        <h2>Members ({{ members|length }})</h2>
+        <ul class="member-list">
+          {% for m in members %}
+          <li>
+            <span>{{ m.name }} <span style="color:#999;">&lt;{{ m.email }}&gt;</span></span>
+            <form method="POST" action="/action/remove-member" style="display:inline;">
+              <input type="hidden" name="email" value="{{ m.email }}">
+              <button class="btn sm danger" type="submit" onclick="return confirm('Remove {{ m.name }}?')">Remove</button>
+            </form>
+          </li>
+          {% endfor %}
+        </ul>
+        <hr style="margin: 1rem 0; border: none; border-top: 1px solid #eee;">
+        <form method="POST" action="/action/add-member" class="inline-form">
+          <input type="text" name="name" placeholder="Full name" required>
+          <input type="email" name="email" placeholder="email@example.com" required>
+          <button class="btn sm primary" type="submit">Add Member</button>
+        </form>
+      </div>
     </div>
   </div>
+
+  <script>
+    function showTab(name) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
 </body>
 </html>
