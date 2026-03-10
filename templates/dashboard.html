@@ -92,6 +92,31 @@
     .section-title { font-size: 1.1rem; font-weight: 700; color: #333; margin: 1.5rem 0 0.75rem; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
+
+    /* Scorecard */
+    .scorecard-table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; font-size: 0.85rem; }
+    .scorecard-table th, .scorecard-table td { padding: 0.35rem 0.25rem; text-align: center; min-width: 36px; }
+    .scorecard-table .hole-row th { background: #2d5a27; color: white; font-size: 0.75rem; }
+    .scorecard-table .par-row td { background: #f0f2f5; font-weight: 600; font-size: 0.8rem; }
+    .scorecard-table .yardage-row td { background: #e8ece8; font-size: 0.7rem; color: #666; }
+    .hole-input { width: 36px; padding: 0.3rem; text-align: center; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
+    .hole-input:focus { outline: none; border-color: #2d5a27; background: #fffdf0; }
+    .subtotal { font-weight: 700; color: #2d5a27; }
+    .hole-input.birdie { background: #d4edda; border-color: #28a745; }
+    .hole-input.bogey { background: #fff3cd; border-color: #ffc107; }
+    .hole-input.double-plus { background: #f8d7da; border-color: #dc3545; }
+    .leaderboard-table { width: 100%; border-collapse: collapse; }
+    .leaderboard-table th { text-align: left; padding: 0.5rem; font-size: 0.8rem; color: #777; text-transform: uppercase; border-bottom: 2px solid #f0f2f5; }
+    .leaderboard-table td { padding: 0.5rem; border-bottom: 1px solid #f0f2f5; }
+    .leaderboard-table .rank { font-weight: 700; width: 30px; }
+    .leaderboard-table tr.leader { background: #fffdf0; }
+    .score-under { color: #c0392b; font-weight: 700; }
+    .score-over { color: #333; font-weight: 700; }
+    .score-even { color: #2d5a27; font-weight: 700; }
+    @media (max-width: 768px) {
+      .scorecard-table { font-size: 0.75rem; }
+      .hole-input { width: 30px; padding: 0.2rem; font-size: 0.8rem; }
+    }
   </style>
 </head>
 <body>
@@ -105,6 +130,7 @@
   <div class="nav">
     <a href="#" class="active" onclick="showTab('dashboard')">Dashboard</a>
     <a href="#" onclick="showTab('season')">Season Schedule</a>
+    <a href="#" onclick="showTab('scores')">Scores</a>
     <a href="#" onclick="showTab('roster')">The Roster</a>
     <a href="#" onclick="showTab('admin')">Admin</a>
   </div>
@@ -263,6 +289,186 @@
       {% endif %}
     </div>
 
+    <!-- ==================== SCORES TAB ==================== -->
+    <div id="tab-scores" class="tab-content">
+
+      <!-- Score Entry -->
+      {% if week and week_course %}
+      <div class="card full" style="margin-bottom: 1.25rem;">
+        <h2>Enter Scorecard &mdash; {{ week_course.name }} (Par {{ week_course.total_par }})</h2>
+        <form method="POST" action="/action/submit-scorecard" id="scorecard-form" data-par="{{ week_course.total_par }}">
+          <input type="hidden" name="week_id" value="{{ week.id }}">
+          <input type="hidden" name="course_id" value="{{ week_course.id }}">
+
+          <div class="inline-form" style="margin-bottom: 1rem;">
+            <label style="font-weight:600;">Player:</label>
+            <select name="member_id" required style="padding:0.5rem;border-radius:8px;border:1px solid #ddd;font-size:0.9rem;">
+              <option value="">Select player...</option>
+              {% for m in members %}
+              <option value="{{ m.id }}">{{ m.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <!-- Front 9 -->
+            <table class="scorecard-table">
+              <tr class="hole-row">
+                <th style="text-align:left;">Hole</th>
+                {% for i in range(1, front_nine_count + 1) %}
+                <th>{{ i }}</th>
+                {% endfor %}
+                <th>OUT</th>
+              </tr>
+              {% if week_course.yardage_list() %}
+              <tr class="yardage-row">
+                <td style="text-align:left; font-weight:600;">Yds</td>
+                {% for i in range(front_nine_count) %}
+                <td>{{ week_course.yardage_list()[i] }}</td>
+                {% endfor %}
+                <td>{{ week_course.yardage_list()[:front_nine_count]|sum }}</td>
+              </tr>
+              {% endif %}
+              <tr class="par-row">
+                <td style="text-align:left; font-weight:600;">Par</td>
+                {% for i in range(front_nine_count) %}
+                <td>{{ week_course_pars[i] }}</td>
+                {% endfor %}
+                <td>{{ front_nine_par }}</td>
+              </tr>
+              <tr>
+                <td style="text-align:left; font-weight:600;">Score</td>
+                {% for i in range(1, front_nine_count + 1) %}
+                <td><input type="number" name="hole_{{ i }}" min="1" max="15"
+                           class="hole-input" data-hole="{{ i }}" data-par="{{ week_course_pars[i-1] }}" required></td>
+                {% endfor %}
+                <td class="subtotal" id="front-total">&ndash;</td>
+              </tr>
+            </table>
+
+            {% if week_course.num_holes == 18 %}
+            <!-- Back 9 -->
+            <table class="scorecard-table">
+              <tr class="hole-row">
+                <th style="text-align:left;">Hole</th>
+                {% for i in range(10, 19) %}
+                <th>{{ i }}</th>
+                {% endfor %}
+                <th>IN</th>
+                <th>TOT</th>
+              </tr>
+              {% if week_course.yardage_list() %}
+              <tr class="yardage-row">
+                <td style="text-align:left; font-weight:600;">Yds</td>
+                {% for i in range(9, 18) %}
+                <td>{{ week_course.yardage_list()[i] }}</td>
+                {% endfor %}
+                <td>{{ week_course.yardage_list()[9:]|sum }}</td>
+                <td>{{ week_course.yardage_list()|sum }}</td>
+              </tr>
+              {% endif %}
+              <tr class="par-row">
+                <td style="text-align:left; font-weight:600;">Par</td>
+                {% for i in range(9, 18) %}
+                <td>{{ week_course_pars[i] }}</td>
+                {% endfor %}
+                <td>{{ back_nine_par }}</td>
+                <td>{{ week_course.total_par }}</td>
+              </tr>
+              <tr>
+                <td style="text-align:left; font-weight:600;">Score</td>
+                {% for i in range(10, 19) %}
+                <td><input type="number" name="hole_{{ i }}" min="1" max="15"
+                           class="hole-input" data-hole="{{ i }}" data-par="{{ week_course_pars[i-1] }}" required></td>
+                {% endfor %}
+                <td class="subtotal" id="back-total">&ndash;</td>
+                <td class="subtotal" id="grand-total">&ndash;</td>
+              </tr>
+            </table>
+            {% endif %}
+          </div>
+
+          <div style="margin-top: 1rem; display: flex; align-items: center; gap: 1rem;">
+            <span id="score-summary" style="font-weight:700; font-size:1.1rem;"></span>
+            <button class="btn primary" type="submit">Save Scorecard</button>
+          </div>
+        </form>
+      </div>
+      {% elif week %}
+      <div class="card full" style="margin-bottom: 1.25rem;">
+        <p class="empty">No course data for this week. Run import_season.py to load course data.</p>
+      </div>
+      {% else %}
+      <div class="card full" style="margin-bottom: 1.25rem;">
+        <p class="empty">No active week. Send invites to start a new week.</p>
+      </div>
+      {% endif %}
+
+      <!-- This Week's Scores -->
+      {% if week_scorecards %}
+      <div class="card full" style="margin-bottom: 1.25rem;">
+        <h2>Scores &mdash; {{ friday_str }}</h2>
+        <table class="leaderboard-table">
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th style="text-align:center;">Course</th>
+            <th style="text-align:center;">Total</th>
+            <th style="text-align:center;">vs Par</th>
+          </tr>
+          {% for sc in week_scorecards %}
+          <tr {% if loop.first %}class="leader"{% endif %}>
+            <td class="rank">{{ loop.index }}</td>
+            <td style="font-weight:600;">{{ sc.member_name }}</td>
+            <td style="text-align:center;">{{ sc.course_name }}</td>
+            <td style="text-align:center; font-weight:700;">{{ sc.total_score }}</td>
+            <td style="text-align:center;" class="{% if sc.score_vs_par < 0 %}score-under{% elif sc.score_vs_par == 0 %}score-even{% else %}score-over{% endif %}">
+              {% if sc.score_vs_par > 0 %}+{% endif %}{{ sc.score_vs_par }}
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %}
+
+      <!-- Season Leaderboard -->
+      <div class="card full">
+        <h2>Season Leaderboard</h2>
+        {% if leaderboard %}
+        <table class="leaderboard-table">
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th style="text-align:center;">Rounds</th>
+            <th style="text-align:center;">Avg</th>
+            <th style="text-align:center;">Avg vs Par</th>
+            <th style="text-align:center;">Best</th>
+            <th style="text-align:center;">Total</th>
+          </tr>
+          {% for row in leaderboard %}
+          <tr {% if loop.first %}class="leader"{% endif %}>
+            <td class="rank">{{ loop.index }}</td>
+            <td style="font-weight:600;">
+              <a href="#" onclick="showPlayerStats({{ row.id }}); return false;"
+                 style="color:#2d5a27; text-decoration:none;">{{ row.name }}</a>
+            </td>
+            <td style="text-align:center;">{{ row.rounds_played }}</td>
+            <td style="text-align:center; font-weight:700;">{{ row.avg_score }}</td>
+            <td style="text-align:center;" class="{% if row.avg_vs_par < 0 %}score-under{% elif row.avg_vs_par == 0 %}score-even{% else %}score-over{% endif %}">
+              {% if row.avg_vs_par > 0 %}+{% endif %}{{ row.avg_vs_par }}
+            </td>
+            <td style="text-align:center;">{{ row.best_round }}</td>
+            <td style="text-align:center;">{{ row.total_strokes }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">No scores entered yet. Play some golf!</p>
+        {% endif %}
+      </div>
+
+    </div>
+
     <!-- ==================== ROSTER TAB ==================== -->
     <div id="tab-roster" class="tab-content">
       <div class="section-title">The Squad ({{ members|length }} golfers)</div>
@@ -309,6 +515,95 @@
       document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
       document.getElementById('tab-' + name).classList.add('active');
       event.target.classList.add('active');
+    }
+
+    // Live scorecard totals
+    document.addEventListener('input', function(e) {
+      if (e.target.classList.contains('hole-input')) {
+        updateScorecard();
+        colorCodeHole(e.target);
+      }
+    });
+
+    function updateScorecard() {
+      var inputs = document.querySelectorAll('.hole-input');
+      var frontTotal = 0, backTotal = 0;
+      var frontCount = 0, backCount = 0;
+
+      inputs.forEach(function(input) {
+        var hole = parseInt(input.dataset.hole);
+        var val = parseInt(input.value) || 0;
+        if (hole <= 9) { frontTotal += val; if (val) frontCount++; }
+        else { backTotal += val; if (val) backCount++; }
+      });
+
+      var grandTotal = frontTotal + backTotal;
+      var frontEl = document.getElementById('front-total');
+      var backEl = document.getElementById('back-total');
+      var grandEl = document.getElementById('grand-total');
+      var summaryEl = document.getElementById('score-summary');
+
+      if (frontEl) frontEl.textContent = frontCount > 0 ? frontTotal : '\u2013';
+      if (backEl) backEl.textContent = backCount > 0 ? backTotal : '\u2013';
+      if (grandEl) grandEl.textContent = (frontCount + backCount) > 0 ? grandTotal : '\u2013';
+
+      if (summaryEl && (frontCount + backCount) > 0) {
+        var form = document.getElementById('scorecard-form');
+        var coursePar = parseInt(form.dataset.par) || 0;
+        var diff = grandTotal - coursePar;
+        var sign = diff > 0 ? '+' : '';
+        summaryEl.textContent = 'Total: ' + grandTotal + ' (' + sign + diff + ')';
+        summaryEl.style.color = diff < 0 ? '#c0392b' : diff === 0 ? '#2d5a27' : '#333';
+      }
+    }
+
+    function colorCodeHole(input) {
+      var score = parseInt(input.value);
+      var par = parseInt(input.dataset.par);
+      if (!score || !par) return;
+      input.classList.remove('birdie', 'bogey', 'double-plus');
+      if (score < par) input.classList.add('birdie');
+      else if (score === par + 1) input.classList.add('bogey');
+      else if (score >= par + 2) input.classList.add('double-plus');
+    }
+
+    function showPlayerStats(memberId) {
+      fetch('/api/player-stats/' + memberId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.error) { alert('No scorecards found for this player.'); return; }
+          var avgVsPar = data.avg_vs_par;
+          var sign = avgVsPar > 0 ? '+' : '';
+          var html = '<h3 style="margin-bottom:0.5rem;">' + data.name + '</h3>';
+          html += '<div style="display:flex;gap:1.5rem;margin-bottom:1rem;">';
+          html += '<div><strong>' + data.total_rounds + '</strong> rounds</div>';
+          html += '<div>Avg: <strong>' + data.avg_score + '</strong></div>';
+          html += '<div>Avg vs Par: <strong>' + sign + avgVsPar + '</strong></div>';
+          html += '<div>Best: <strong>' + data.best_round + '</strong></div>';
+          html += '</div>';
+          html += '<table style="width:100%;border-collapse:collapse;font-size:0.9rem;">';
+          html += '<tr style="border-bottom:2px solid #f0f2f5;"><th style="text-align:left;padding:0.35rem;">Date</th><th style="text-align:left;">Course</th><th style="text-align:center;">Score</th><th style="text-align:center;">vs Par</th></tr>';
+          data.rounds.forEach(function(r) {
+            var s = r.score_vs_par > 0 ? '+' : '';
+            html += '<tr style="border-bottom:1px solid #f0f2f5;"><td style="padding:0.35rem;">' + r.week_of + '</td><td>' + r.course_name + '</td><td style="text-align:center;font-weight:700;">' + r.total_score + '</td><td style="text-align:center;">' + s + r.score_vs_par + '</td></tr>';
+          });
+          html += '</table>';
+          showModal(html);
+        });
+    }
+
+    function showModal(content) {
+      var existing = document.getElementById('stats-modal');
+      if (existing) existing.remove();
+      var overlay = document.createElement('div');
+      overlay.id = 'stats-modal';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+      var modal = document.createElement('div');
+      modal.style.cssText = 'background:white;border-radius:12px;padding:1.5rem;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;';
+      modal.innerHTML = content + '<br><button class="btn secondary" onclick="document.getElementById(\'stats-modal\').remove()">Close</button>';
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
     }
   </script>
 </body>

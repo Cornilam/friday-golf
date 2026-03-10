@@ -62,6 +62,40 @@ class Pairing:
 
 
 @dataclass
+class Course:
+    id: int
+    name: str
+    num_holes: int
+    total_par: int
+    pars: str  # comma-separated, e.g. "4,4,3,5,..."
+    yardages: str  # comma-separated or empty
+
+    def par_list(self) -> list[int]:
+        return [int(p) for p in self.pars.split(",")]
+
+    def yardage_list(self) -> list[int]:
+        if not self.yardages:
+            return []
+        return [int(y) for y in self.yardages.split(",")]
+
+
+@dataclass
+class Scorecard:
+    id: int
+    member_id: int
+    week_id: int
+    course_id: int
+    scores: str  # comma-separated, e.g. "5,4,3,6,..."
+    total_score: int
+    score_vs_par: int
+    submitted_by: Optional[int]
+    submitted_at: str
+
+    def score_list(self) -> list[int]:
+        return [int(s) for s in self.scores.split(",")]
+
+
+@dataclass
 class EmailLogEntry:
     id: int
     to_email: str
@@ -137,6 +171,28 @@ def init_db() -> None:
             play_date TEXT NOT NULL,
             course_name TEXT NOT NULL,
             UNIQUE(week_number)
+        );
+
+        CREATE TABLE IF NOT EXISTS courses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            num_holes INTEGER NOT NULL,
+            total_par INTEGER NOT NULL,
+            pars TEXT NOT NULL,
+            yardages TEXT NOT NULL DEFAULT ''
+        );
+
+        CREATE TABLE IF NOT EXISTS scorecards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            member_id INTEGER NOT NULL REFERENCES members(id),
+            week_id INTEGER NOT NULL REFERENCES weeks(id),
+            course_id INTEGER NOT NULL REFERENCES courses(id),
+            scores TEXT NOT NULL,
+            total_score INTEGER NOT NULL,
+            score_vs_par INTEGER NOT NULL,
+            submitted_by INTEGER REFERENCES members(id),
+            submitted_at TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(member_id, week_id)
         );
 
         CREATE TABLE IF NOT EXISTS email_log (
@@ -439,6 +495,142 @@ def get_season_schedule() -> list[dict]:
     conn = get_connection()
     rows = conn.execute(
         "SELECT * FROM season_schedule ORDER BY week_number"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+# --- Course queries ---
+
+
+def upsert_course(name: str, num_holes: int, total_par: int, pars: str, yardages: str = "") -> None:
+    conn = get_connection()
+    conn.execute(
+        """INSERT INTO courses (name, num_holes, total_par, pars, yardages)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(name)
+           DO UPDATE SET num_holes = excluded.num_holes,
+               total_par = excluded.total_par,
+               pars = excluded.pars,
+               yardages = excluded.yardages""",
+        (name, num_holes, total_par, pars, yardages),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_course_by_name(name: str) -> Optional[Course]:
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM courses WHERE name = ?", (name,)).fetchone()
+    conn.close()
+    return Course(**row) if row else None
+
+
+def get_all_courses() -> list[Course]:
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM courses ORDER BY name").fetchall()
+    conn.close()
+    return [Course(**r) for r in rows]
+
+
+def get_course_for_week(week_id: int) -> Optional[Course]:
+    """Look up the scheduled course for a week via season_schedule."""
+    conn = get_connection()
+    week_row = conn.execute("SELECT week_of FROM weeks WHERE id = ?", (week_id,)).fetchone()
+    if not week_row:
+        conn.close()
+        return None
+    sched_row = conn.execute(
+        "SELECT course_name FROM season_schedule WHERE play_date = ?",
+        (week_row["week_of"],),
+    ).fetchone()
+    if not sched_row:
+        conn.close()
+        return None
+    course_row = conn.execute(
+        "SELECT * FROM courses WHERE name = ?", (sched_row["course_name"],)
+    ).fetchone()
+    conn.close()
+    return Course(**course_row) if course_row else None
+
+
+# --- Scorecard queries ---
+
+
+def upsert_scorecard(
+    member_id: int, week_id: int, course_id: int,
+    scores: str, total_score: int, score_vs_par: int,
+    submitted_by: Optional[int] = None,
+) -> Scorecard:
+    conn = get_connection()
+    conn.execute(
+        """INSERT INTO scorecards (member_id, week_id, course_id, scores, total_score, score_vs_par, submitted_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(member_id, week_id)
+           DO UPDATE SET course_id = excluded.course_id,
+               scores = excluded.scores,
+               total_score = excluded.total_score,
+               score_vs_par = excluded.score_vs_par,
+               submitted_by = excluded.submitted_by,
+               submitted_at = datetime('now')""",
+        (member_id, week_id, course_id, scores, total_score, score_vs_par, submitted_by),
+    )
+    conn.commit()
+    row = conn.execute(
+        "SELECT * FROM scorecards WHERE member_id = ? AND week_id = ?",
+        (member_id, week_id),
+    ).fetchone()
+    conn.close()
+    return Scorecard(**row)
+
+
+def get_scorecards_for_week(week_id: int) -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT sc.*, m.name AS member_name, c.name AS course_name,
+                  c.total_par, c.pars AS course_pars, c.num_holes
+           FROM scorecards sc
+           JOIN members m ON sc.member_id = m.id
+           JOIN courses c ON sc.course_id = c.id
+           WHERE sc.week_id = ?
+           ORDER BY sc.total_score""",
+        (week_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_season_leaderboard() -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT m.id, m.name,
+                  COUNT(sc.id) AS rounds_played,
+                  SUM(sc.total_score) AS total_strokes,
+                  SUM(sc.score_vs_par) AS total_vs_par,
+                  ROUND(AVG(sc.total_score), 1) AS avg_score,
+                  ROUND(AVG(sc.score_vs_par), 1) AS avg_vs_par,
+                  MIN(sc.total_score) AS best_round,
+                  MAX(sc.total_score) AS worst_round
+           FROM scorecards sc
+           JOIN members m ON sc.member_id = m.id
+           GROUP BY m.id
+           ORDER BY avg_vs_par ASC"""
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_player_scorecards(member_id: int) -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute(
+        """SELECT sc.*, c.name AS course_name, c.total_par, c.pars AS course_pars,
+                  c.num_holes, w.week_of
+           FROM scorecards sc
+           JOIN courses c ON sc.course_id = c.id
+           JOIN weeks w ON sc.week_id = w.id
+           WHERE sc.member_id = ?
+           ORDER BY w.week_of""",
+        (member_id,),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
