@@ -63,19 +63,22 @@ def send_email(to: str, subject: str, body: str, email_type: str) -> bool:
         return False
 
 
-def send_invite(member: db.Member, friday_date: str) -> bool:
+def send_invite(member: db.Member, friday_date: str, rsvp_token: str = "") -> bool:
     """Send the Monday invite email to a member."""
     template = Path("templates/invite.txt").read_text()
-    body = template.format(name=member.name, date=friday_date)
+    rsvp_link = f"{config.BASE_URL}/rsvp/{rsvp_token}" if rsvp_token else "(RSVP link unavailable)"
+    body = template.format(name=member.name, date=friday_date, rsvp_link=rsvp_link)
     subject = f"Friday Golf -- Who's In? ({friday_date})"
     return send_email(member.email, subject, body, "invite")
 
 
-def send_reminder(member: db.Member, friday_date: str, player_count: int) -> bool:
+def send_reminder(member: db.Member, friday_date: str, player_count: int, rsvp_token: str = "") -> bool:
     """Send the Wednesday reminder to a non-respondent."""
     template = Path("templates/reminder.txt").read_text()
+    rsvp_link = f"{config.BASE_URL}/rsvp/{rsvp_token}" if rsvp_token else "(RSVP link unavailable)"
     body = template.format(
-        name=member.name, date=friday_date, player_count=player_count
+        name=member.name, date=friday_date, player_count=player_count,
+        rsvp_link=rsvp_link,
     )
     subject = f"Friday Golf Reminder -- We Need Your RSVP ({friday_date})"
     return send_email(member.email, subject, body, "reminder")

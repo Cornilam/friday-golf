@@ -9,6 +9,7 @@ import config
 import db
 import email_client
 import pairing_engine
+import rsvp as rsvp_mod
 import scraper
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,8 @@ def job_send_invites() -> None:
 
     sent = 0
     for member in members:
-        if email_client.send_invite(member, friday_str):
+        token = rsvp_mod.generate_rsvp_token(member.id, week.id)
+        if email_client.send_invite(member, friday_str, rsvp_token=token):
             sent += 1
 
     logger.info(f"Sent {sent}/{len(members)} invite emails for week {friday}")
@@ -54,7 +56,8 @@ def job_send_reminders() -> None:
 
     sent = 0
     for member in non_respondents:
-        if email_client.send_reminder(member, friday_str, player_count):
+        token = rsvp_mod.generate_rsvp_token(member.id, week.id)
+        if email_client.send_reminder(member, friday_str, player_count, rsvp_token=token):
             sent += 1
 
     logger.info(

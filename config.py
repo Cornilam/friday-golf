@@ -62,6 +62,10 @@ COURSES = {
 WEBTRAC_USERNAME = os.getenv("WEBTRAC_USERNAME", "")
 WEBTRAC_PASSWORD = os.getenv("WEBTRAC_PASSWORD", "")
 
+# RSVP link tokens
+RSVP_SECRET = os.getenv("RSVP_SECRET", "friday-golf-rsvp-default-key")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:5000")
+
 # Reply keyword matching
 KEYWORDS_IN = {"in", "yes", "i'm in", "count me in", "playing", "im in", "i am in"}
 KEYWORDS_OUT = {"out", "no", "can't", "cant", "skip", "not this week", "pass", "nope"}

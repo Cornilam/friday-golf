@@ -2,7 +2,9 @@ Hey {name},
 
 Tee times are lining up for this Friday ({date}).
 
-Reply IN to play or OUT to skip.
+RSVP here: {rsvp_link}
+
+Or reply IN to play or OUT to skip.
 
 If you're in, let us know your preferences:
   - Preferred course? (e.g. Brown Deer, Dretzka, Currie, Oakwood, etc.)

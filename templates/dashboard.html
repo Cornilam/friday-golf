@@ -117,6 +117,27 @@
       .scorecard-table { font-size: 0.75rem; }
       .hole-input { width: 30px; padding: 0.2rem; font-size: 0.8rem; }
     }
+
+    /* RSVP card */
+    .rsvp-card { background: linear-gradient(135deg, #fffdf0 0%, #fff 100%); border: 2px solid #f39c12; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+    .rsvp-card h2 { font-size: 1.3rem; color: #2d5a27; margin-bottom: 0.25rem; border: none; padding: 0; text-transform: none; letter-spacing: normal; }
+    .rsvp-card .rsvp-sub { color: #555; margin-bottom: 1.25rem; font-size: 0.95rem; }
+    .rsvp-btn-group { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .rsvp-btn-group label { flex: 1; text-align: center; padding: 1rem; border: 2px solid #ddd; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 1.1rem; transition: all 0.15s; }
+    .rsvp-btn-group label:hover { border-color: #aaa; }
+    .rsvp-btn-group input[type="radio"] { display: none; }
+    .rsvp-btn-group input[value="in"]:checked + span { background: #d4edda; border-color: #2d5a27; color: #2d5a27; }
+    .rsvp-btn-group input[value="out"]:checked + span { background: #f8d7da; border-color: #c0392b; color: #c0392b; }
+    .rsvp-btn-group label:has(input:checked) { border-color: transparent; }
+    .rsvp-btn-group label:has(input[value="in"]:checked) { background: #d4edda; border-color: #2d5a27; color: #2d5a27; }
+    .rsvp-btn-group label:has(input[value="out"]:checked) { background: #f8d7da; border-color: #c0392b; color: #c0392b; }
+    .rsvp-prefs { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .rsvp-prefs > div { flex: 1; min-width: 180px; }
+    .rsvp-prefs label { font-size: 0.85rem; color: #555; display: block; margin-bottom: 0.3rem; font-weight: 600; }
+    .rsvp-prefs select { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; background: white; }
+    .rsvp-prefs select:focus { outline: none; border-color: #2d5a27; }
+    .rsvp-already { background: #d4edda; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; color: #155724; font-size: 0.9rem; }
+    @media (max-width: 480px) { .rsvp-btn-group { flex-direction: column; } }
   </style>
 </head>
 <body>
@@ -154,6 +175,66 @@
         </form>
       </div>
       {% else %}
+
+      {% if rsvp_member is defined and rsvp_member %}
+      <div class="rsvp-card">
+        {% if rsvp_existing %}
+        <div class="rsvp-already">
+          You already RSVP'd <strong>{{ rsvp_existing.status|upper }}</strong> for this week.
+          You can update your response below.
+        </div>
+        {% endif %}
+
+        <h2>Hey {{ rsvp_member.name }}, are you in for Friday?</h2>
+        <p class="rsvp-sub">{{ rsvp_friday_str }}{% if rsvp_scheduled_course %} &mdash; {{ rsvp_scheduled_course.name }} ({{ rsvp_scheduled_course.num_holes }}H, par {{ rsvp_scheduled_course.total_par }}){% endif %}</p>
+
+        <form method="POST" action="/rsvp/{{ rsvp_token }}">
+          <div class="rsvp-btn-group">
+            <label>
+              <input type="radio" name="status" value="in"
+                {% if rsvp_existing and rsvp_existing.status == 'in' %}checked{% endif %}
+                onchange="document.getElementById('rsvp-prefs').style.display='flex'">
+              <span>&#9971; I'M IN</span>
+            </label>
+            <label>
+              <input type="radio" name="status" value="out"
+                {% if rsvp_existing and rsvp_existing.status == 'out' %}checked{% endif %}
+                onchange="document.getElementById('rsvp-prefs').style.display='none'">
+              <span>&#128075; I'M OUT</span>
+            </label>
+          </div>
+
+          <div class="rsvp-prefs" id="rsvp-prefs"
+            style="{% if not rsvp_existing or rsvp_existing.status != 'in' %}display:none;{% endif %}">
+            <div>
+              <label>Course Preference</label>
+              <select name="preferred_course">
+                <option value="">No preference</option>
+                {% for c in rsvp_courses %}
+                <option value="{{ c.name }}"
+                  {% if rsvp_existing and rsvp_existing.preferred_course == c.name %}selected
+                  {% elif rsvp_scheduled_course and c.name == rsvp_scheduled_course.name and (not rsvp_existing or not rsvp_existing.preferred_course) %}selected{% endif %}>
+                  {{ c.name }} ({{ c.num_holes }}H, par {{ c.total_par }}){% if rsvp_scheduled_course and c.name == rsvp_scheduled_course.name %} &#11013; This Week{% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label>Preferred Tee Time</label>
+              <select name="preferred_time">
+                <option value="">No preference</option>
+                <option value="early" {% if rsvp_existing and rsvp_existing.preferred_time == 'early' %}selected{% endif %}>Early (before 8am)</option>
+                <option value="morning" {% if rsvp_existing and rsvp_existing.preferred_time == 'morning' %}selected{% endif %}>Morning (8-10am)</option>
+                <option value="late morning" {% if rsvp_existing and rsvp_existing.preferred_time == 'late morning' %}selected{% endif %}>Late Morning (10am+)</option>
+                <option value="afternoon" {% if rsvp_existing and rsvp_existing.preferred_time == 'afternoon' %}selected{% endif %}>Afternoon</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn primary" type="submit" style="font-size: 1rem; padding: 0.75rem 2rem;">Submit RSVP</button>
+        </form>
+      </div>
+      {% endif %}
 
       <div class="stats">
         <div class="stat in">

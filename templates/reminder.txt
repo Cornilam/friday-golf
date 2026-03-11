@@ -2,6 +2,8 @@ Hey {name},
 
 Haven't heard from you yet for this Friday ({date}).
 
+RSVP here: {rsvp_link}
+
 Currently {player_count} player(s) registered.
 
 Reply IN or OUT by Thursday noon.

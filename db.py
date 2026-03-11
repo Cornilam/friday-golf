@@ -266,6 +266,15 @@ def get_member_by_email(email: str) -> Optional[Member]:
     return Member(**row) if row else None
 
 
+def get_member_by_id(member_id: int) -> Optional[Member]:
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT * FROM members WHERE id = ? AND active = 1", (member_id,)
+    ).fetchone()
+    conn.close()
+    return Member(**row) if row else None
+
+
 # --- Week queries ---
 
 
@@ -288,6 +297,13 @@ def get_current_week() -> Optional[Week]:
     row = conn.execute(
         "SELECT * FROM weeks WHERE status = 'open' ORDER BY week_of DESC LIMIT 1"
     ).fetchone()
+    conn.close()
+    return Week(**row) if row else None
+
+
+def get_week_by_id(week_id: int) -> Optional[Week]:
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM weeks WHERE id = ?", (week_id,)).fetchone()
     conn.close()
     return Week(**row) if row else None
 

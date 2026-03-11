@@ -10,6 +10,7 @@ import config
 import db
 import email_client
 import pairing_engine
+import rsvp as rsvp_mod
 import scraper
 import scheduler as sched
 
@@ -81,18 +82,12 @@ def _run_in_thread(fn, *args):
     return t
 
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
-
-@app.route("/")
-def dashboard():
+def _get_full_dashboard_context() -> dict:
+    """Build the complete template context shared by dashboard and RSVP routes."""
     ctx = _get_week_context()
     members = db.get_active_members()
     season = db.get_season_schedule()
 
-    # Find this week and next week in the season
-    from datetime import date
     today = date.today()
     for s in season:
         d = date.fromisoformat(s["play_date"])
@@ -118,8 +113,7 @@ def dashboard():
 
     leaderboard = db.get_season_leaderboard()
 
-    return render_template(
-        "dashboard.html", **ctx,
+    ctx.update(
         members=members, courses=config.COURSES,
         season=season, upcoming=upcoming, past=past,
         week_course=week_course, week_course_pars=week_course_pars,
@@ -127,6 +121,83 @@ def dashboard():
         back_nine_par=back_nine_par, week_scorecards=week_scorecards,
         leaderboard=leaderboard,
     )
+    return ctx
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+@app.route("/")
+def dashboard():
+    ctx = _get_full_dashboard_context()
+    return render_template("dashboard.html", **ctx)
+
+
+@app.route("/rsvp/<token>", methods=["GET", "POST"])
+def rsvp(token):
+    """Handle RSVP via signed link from email."""
+    data = rsvp_mod.validate_rsvp_token(token)
+    if not data:
+        flash("Invalid or expired RSVP link.", "error")
+        return redirect(url_for("dashboard"))
+
+    member = db.get_member_by_id(data["m"])
+    week = db.get_week_by_id(data["w"])
+
+    if not member or not week:
+        flash("RSVP link is no longer valid.", "error")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        if week.status != "open":
+            flash("Registration for this week has closed.", "error")
+            return redirect(url_for("dashboard"))
+
+        status = request.form.get("status", "").strip().lower()
+        if status not in ("in", "out"):
+            flash("Please choose I'M IN or I'M OUT.", "error")
+            return redirect(url_for("rsvp", token=token))
+
+        preferred_course = request.form.get("preferred_course", "").strip() if status == "in" else ""
+        preferred_time = request.form.get("preferred_time", "").strip() if status == "in" else ""
+
+        db.upsert_registration(
+            member.id, week.id, status,
+            preferred_course=preferred_course,
+            preferred_time=preferred_time,
+        )
+
+        if status == "in":
+            flash(f"You're in for Friday, {member.name}! See you on the course.", "success")
+        else:
+            flash(f"Got it, {member.name}. Maybe next week!", "success")
+        return redirect(url_for("dashboard"))
+
+    # --- GET: render dashboard with RSVP card ---
+    # Check for existing registration
+    rsvp_existing = None
+    regs = db.get_registrations(week.id)
+    for r in regs:
+        if r.member_id == member.id:
+            rsvp_existing = r
+            break
+
+    friday = date.fromisoformat(week.week_of)
+    scheduled_course = db.get_course_for_week(week.id)
+    all_courses = db.get_all_courses()
+
+    ctx = _get_full_dashboard_context()
+    ctx.update(
+        rsvp_member=member,
+        rsvp_week=week,
+        rsvp_token=token,
+        rsvp_friday_str=friday.strftime("%A, %B %d").replace(" 0", " "),
+        rsvp_existing=rsvp_existing,
+        rsvp_scheduled_course=scheduled_course,
+        rsvp_courses=all_courses,
+    )
+    return render_template("dashboard.html", **ctx)
 
 
 @app.route("/action/send-invites", methods=["POST"])
