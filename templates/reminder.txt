@@ -1,11 +1,7 @@
 Hey {name},
 
-Haven't heard from you yet for this Friday ({date}).
+Haven't heard from you yet for this Friday ({date}). {player_count} player(s) in so far.
 
 RSVP here: {rsvp_link}
-
-Currently {player_count} player(s) registered.
-
-Reply IN or OUT by Thursday noon.
 
 -- Friday Golf Bot
